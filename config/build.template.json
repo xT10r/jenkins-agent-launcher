@@ -1,0 +1,9 @@
+{
+  "outputExe": "agent-launcher.exe",
+  "iconPath": "assets/jenkins.ico",
+  "version": "1.0.0.0",
+  "title": "Jenkins Agent Launcher",
+  "company": "Jenkins Agent Launcher Contributors",
+  "noConsole": true,
+  "sta": true
+}

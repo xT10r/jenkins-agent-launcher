@@ -1,0 +1,92 @@
+{
+  "agent": {
+    "jenkinsUrl": "https://jenkins.example.com",
+    "agentName": "windows-agent-1",
+    "secret": "CHANGE_ME_SECRET",
+    "verifySsl": true,
+    "tunnel": "",
+    "javaHome": "",
+    "workDir": "%USERPROFILE%\\jenkins-agent",
+    "agentJarName": "agent.jar",
+    "logFileName": "jenkins-agent.log"
+  },
+  "logging": {
+    "dir": "logs",
+    "rotation": "daily",
+    "maxDays": 14,
+    "maxSizeMB": 50
+  },
+  "download": {
+    "timeout": 120,
+    "maxRetries": 3,
+    "retryDelaySeconds": 5,
+    "chunkSize": 8192
+  },
+  "fallback": {
+    "agentJarUrl": "https://downloads.example.com/jenkins/agent.jar",
+    "verifySsl": true
+  },
+  "behavior": {
+    "maxRestarts": -1,
+    "restartDelaySeconds": 5,
+    "autoUpdateJar": true
+  },
+  "update": {
+    "enabled": false,
+    "source": {
+      "type": "url",
+      "location": "https://downloads.example.com/launcher/agent-launcher.exe"
+    },
+    "version": "1.0.0.0",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "signature": "",
+    "publisher": "Jenkins Agent Launcher Contributors",
+    "allowDowngrade": false,
+    "allowSameVersion": false,
+    "intervalHours": 24
+  },
+  "environment": {
+    "ignoredVars": [
+      {
+        "name": "JENKINS_SECRET",
+        "reason": "Секрет хранится в ENV launcher и не должен попадать в java-процесс."
+      },
+      {
+        "name": "JENKINS_AGENT_NAME",
+        "reason": "Имя агента может переопределяться launcher и не должно утекать в дочерний процесс через общий ENV."
+      },
+      {
+        "name": "JENKINS_TUNNEL",
+        "reason": "Сетевые параметры launcher не должны автоматически наследоваться java-процессом."
+      },
+      {
+        "name": "JENKINS_WEB_SOCKET",
+        "reason": "Флаг режима подключения должен передаваться только явно собранной командой launcher."
+      },
+      {
+        "name": "JENKINS_DIRECT_CONNECTION",
+        "reason": "Параметры прямого подключения должны контролироваться launcher, а не общим ENV."
+      },
+      {
+        "name": "JENKINS_INSTANCE_IDENTITY",
+        "reason": "Идентификаторы подключения могут быть чувствительными и не должны безусловно наследоваться java-процессом."
+      },
+      {
+        "name": "JENKINS_PROTOCOLS",
+        "reason": "Список протоколов должен пробрасываться только через явные аргументы launcher."
+      },
+      {
+        "name": "JENKINS_JAVA_OPTS",
+        "reason": "JVM-параметры launcher не должны утекать в дочерний процесс через общий ENV."
+      },
+      {
+        "name": "JENKINS_FALLBACK_JAR_PATH",
+        "reason": "Резервный URL управляется конфигом launcher и не должен оставаться в ENV дочернего процесса."
+      }
+    ]
+  },
+  "ui": {
+    "theme": "light",
+    "startMinimized": false
+  }
+}
