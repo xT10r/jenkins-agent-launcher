@@ -234,6 +234,35 @@ class TestControllerBasic:
 
         assert any(text == "Неоднозначный процесс" for text, _ in statuses)
 
+    def test_agent_output_updates_status_when_jenkins_port_is_unreachable(self):
+        statuses = []
+        ctrl = AgentController(AppConfig(), MagicMock(), on_status=lambda text, pid: statuses.append((text, pid)))
+
+        ctrl._handle_agent_output("WARNING: Connection refused: getsockopt")
+        ctrl._handle_agent_output(
+            "java.io.IOException: https://example.com provided port:44373 is not reachable on host example.com"
+        )
+
+        assert statuses == [("Не подключен: порт Jenkins недоступен", 0)]
+
+    def test_agent_output_updates_status_when_server_cannot_be_located(self):
+        statuses = []
+        ctrl = AgentController(AppConfig(), MagicMock(), on_status=lambda text, pid: statuses.append((text, pid)))
+
+        ctrl._handle_agent_output("INFO: Could not locate server among [https://example.com]; waiting 10 seconds")
+
+        assert statuses == [("Не подключен: сервер агента недоступен", 0)]
+
+    def test_agent_output_does_not_downgrade_error_to_retry_status(self):
+        statuses = []
+        ctrl = AgentController(AppConfig(), MagicMock(), on_status=lambda text, pid: statuses.append((text, pid)))
+
+        ctrl._handle_agent_output("WARNING: Connection refused: getsockopt")
+        ctrl._handle_agent_output("INFO: Locating server among [https://example.com]")
+        ctrl._handle_agent_output("INFO: Remoting server accepts the following protocols: [JNLP4-connect, Ping]")
+
+        assert statuses == [("Не подключен: порт Jenkins недоступен", 0)]
+
 
 class TestControllerBreaking:
     """Ломающие тесты контроллера."""

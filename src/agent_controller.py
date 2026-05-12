@@ -44,6 +44,7 @@ class AgentController:
         self._restart_count = 0
         self._thread: threading.Thread | None = None
         self._state_lock = threading.Lock()
+        self._agent_connection_state = ""
 
     # ── Public ──
 
@@ -121,9 +122,10 @@ class AgentController:
                 java_home=a.java_home,
                 java_cmd=java_cmd,
                 isolated_vars=[item.name for item in self.config.environment.ignored_vars],
-                on_line=self._safe_log,
+                on_line=self._handle_agent_output,
             )
             self._process = proc
+            self._agent_connection_state = ""
 
             match = proc.find_matching_process()
             if match.status == "ambiguous":
@@ -271,6 +273,41 @@ class AgentController:
             self.log.log(msg, level=level, comp=comp)
         except Exception:
             pass
+
+    def _handle_agent_output(self, line: str) -> None:
+        self._safe_log(line)
+        status = self._agent_status_from_output(line)
+        if status:
+            self._set_agent_status(status)
+
+    def _agent_status_from_output(self, line: str) -> str:
+        text = line.lower()
+        if "connection refused" in text:
+            return "Не подключен: порт Jenkins недоступен"
+        if "provided port:" in text and "not reachable" in text:
+            return "Не подключен: порт Jenkins недоступен"
+        if "could not locate server" in text:
+            return "Не подключен: сервер агента недоступен"
+        if "locating server among" in text:
+            return "Подключение к Jenkins..."
+        if "remoting server accepts" in text:
+            return "Подключение: протокол найден"
+        if "connected" in text and "connection refused" not in text:
+            return "Подключен к Jenkins"
+        return ""
+
+    def _set_agent_status(self, text: str) -> None:
+        is_error = text.startswith("Не подключен")
+        if self._agent_connection_state.startswith("Не подключен") and not (
+            is_error or text == "Подключен к Jenkins"
+        ):
+            return
+        if text == self._agent_connection_state:
+            return
+
+        self._agent_connection_state = text
+        pid = self._process.pid if self._process and self._process.pid else 0
+        self._set_status(text, pid)
 
     def _complete_post_update(self, *, attached_to_existing_agent: bool, agent_pid: int) -> None:
         if not self.updated_via_self_update or self.update_manager is None:

@@ -239,8 +239,7 @@ class MainWindow(QObject):
         """Перехват событий окна: сворачивание → скрытие в трей."""
         if obj is self._win and event.type() == QEvent.WindowStateChange:
             if self._win.windowState() & Qt.WindowMinimized:
-                self._win.hide()
-                return True
+                return self.minimize_to_tray()
         return False  # Пропускаем остальные события дальше
 
     # ── Public ──
@@ -289,10 +288,12 @@ class MainWindow(QObject):
         self._win.hide()
 
     def minimize_to_tray(self):
-        """Спрятать окно в tray, если tray доступен."""
+        """Спрятать окно в tray, если tray доступен и иконка показана."""
         if self._tray.is_available:
-            self._win.hide()
-            return True
+            self._tray.show()
+            if self._tray.is_visible:
+                self._win.hide()
+                return True
         return False
 
     def _do_exit(self):
@@ -440,11 +441,15 @@ class MainWindow(QObject):
                 # Сначала показать окно, чтобы shell успел зарегистрировать tray-иконку,
                 # затем скрыть его явно. Такой путь стабильнее на старых Windows.
                 self._win.show()
-                QTimer.singleShot(0, self.minimize_to_tray)
+                QTimer.singleShot(0, self._minimize_to_tray_or_taskbar)
             else:
                 self._win.showMinimized()
         else:
             self._win.show()
+
+    def _minimize_to_tray_or_taskbar(self):
+        if not self.minimize_to_tray():
+            self._win.showMinimized()
 
     def _refresh_process_status(self):
         process_info = {

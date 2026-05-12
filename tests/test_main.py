@@ -1,9 +1,10 @@
 """Тесты модуля main.py (CLI парсинг)."""
 
 import pytest
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from src.main import _parse_args, _cli_to_dict
+from src.main import _parse_args, _cli_to_dict, _resolve_icon_path
 
 TEST_VALUE = "test-value"
 
@@ -198,3 +199,21 @@ class TestCliToDict:
         assert result["fallback_jar_url"] == "https://downloads.example.com/agent.jar"
         assert result["agent_jar_path"] == "agent.jar"
         assert result["jenkins_timeout"] == 45
+
+
+class TestResolveIconPath:
+    def test_uses_project_asset_when_not_frozen(self):
+        project_dir = Path.cwd()
+        icon = project_dir / "assets" / "jenkins.ico"
+
+        assert _resolve_icon_path(project_dir) == str(icon)
+
+    def test_uses_pyinstaller_bundle_asset_when_frozen(self):
+        bundle_dir = Path.cwd()
+        bundle_icon = bundle_dir / "assets" / "jenkins.ico"
+
+        assert _resolve_icon_path(
+            Path("missing-project-dir"),
+            frozen=True,
+            bundle_dir=bundle_dir,
+        ) == str(bundle_icon)

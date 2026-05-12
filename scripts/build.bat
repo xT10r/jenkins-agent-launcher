@@ -65,6 +65,7 @@ if exist "%VER_SCRIPT%" (
 :: Иконка
 if defined ICON (
     if exist "%ICON%" set PYI_ARGS=%PYI_ARGS% --icon "%ICON%"
+    if exist "%ICON%" set PYI_ARGS=%PYI_ARGS% --add-data "%ICON%;assets"
     echo   Иконка:         %ICON%
 ) else (
     echo   Иконка:         не найдена

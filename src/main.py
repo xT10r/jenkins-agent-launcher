@@ -50,6 +50,27 @@ def _cli_to_dict(args):
     return normalized
 
 
+def _resolve_icon_path(
+    project_dir: Path,
+    *,
+    frozen: bool | None = None,
+    bundle_dir: Path | None = None,
+) -> str:
+    candidates = []
+    if frozen is None:
+        frozen = bool(getattr(sys, "frozen", False))
+    if frozen:
+        if bundle_dir is None:
+            bundle_dir = Path(getattr(sys, "_MEIPASS", project_dir))
+        candidates.append(bundle_dir / "assets" / "jenkins.ico")
+    candidates.append(project_dir / "assets" / "jenkins.ico")
+
+    for candidate in candidates:
+        if candidate.is_file():
+            return str(candidate)
+    return ""
+
+
 def main():
     from .config import resolve_config, get_project_dir, save_ui_theme
     from .instance_guard import ConfigInstanceGuard
@@ -192,7 +213,7 @@ def main():
         from .agent_controller import AgentController
         from .gui.main_window import MainWindow
 
-        icon_path = str(project_dir / "assets" / "jenkins.ico")
+        icon_path = _resolve_icon_path(project_dir)
 
         # Функции для кнопок (работают и при ctrl=None)
         def do_start():

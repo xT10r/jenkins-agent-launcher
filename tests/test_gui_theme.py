@@ -40,6 +40,7 @@ def test_theme_switch_keeps_same_qt_style_and_widget_structure(monkeypatch):
         win._toggle_theme()
         after = _snapshot(win)
     finally:
+        win._process_timer.stop()
         win._tray.hide()
         win.hide_window()
 
@@ -106,6 +107,7 @@ def test_status_updates_button_and_menu_state(monkeypatch):
         assert win._process_fields["java"]["ram"].text() == "0 MB"
         assert win._process_fields["java"]["uptime"].text() == "-"
     finally:
+        win._process_timer.stop()
         win._tray.hide()
         win.hide_window()
 
@@ -136,6 +138,7 @@ def test_start_minimized_uses_show_minimized(monkeypatch):
         win._show_initial_window()
         assert calls == ["minimized"]
     finally:
+        win._process_timer.stop()
         win._tray.hide()
         win.hide_window()
 
@@ -161,11 +164,84 @@ def test_start_minimized_uses_tray_hide_when_tray_available(monkeypatch):
     try:
         calls = []
         win._tray._available = True
+        monkeypatch.setattr(type(win._tray), "is_visible", property(lambda self: True))
         win._win.show = lambda: calls.append("show")
         monkeypatch.setattr("src.gui.main_window.QTimer.singleShot", lambda delay, cb: cb())
-        monkeypatch.setattr(win, "minimize_to_tray", lambda: calls.append("tray-hide"))
+        win._win.hide = lambda: calls.append("tray-hide")
         win._show_initial_window()
         assert calls == ["show", "tray-hide"]
+    finally:
+        win._tray.hide()
+        win.hide_window()
+
+
+def test_start_minimized_falls_back_to_taskbar_when_tray_icon_not_visible(monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    win = MainWindow(
+        app_name="Test App",
+        app_version="1.0",
+        company="Test",
+        agent_name="agent",
+        icon_path="",
+        log_path="test.log",
+        on_restart=lambda: None,
+        on_stop=lambda: None,
+        on_start=lambda: None,
+        on_exit=lambda: None,
+        on_show_log=lambda: None,
+        dark_theme=False,
+        start_minimized=True,
+    )
+
+    try:
+        calls = []
+        win._tray._available = True
+        monkeypatch.setattr(type(win._tray), "is_visible", property(lambda self: False))
+        win._win.show = lambda: calls.append("show")
+        win._win.hide = lambda: calls.append("hide")
+        win._win.showMinimized = lambda: calls.append("minimized")
+        monkeypatch.setattr("src.gui.main_window.QTimer.singleShot", lambda delay, cb: cb())
+        win._show_initial_window()
+        assert calls == ["show", "minimized"]
+    finally:
+        win._tray.hide()
+        win.hide_window()
+
+
+def test_minimize_event_does_not_hide_window_when_tray_icon_not_visible(monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    win = MainWindow(
+        app_name="Test App",
+        app_version="1.0",
+        company="Test",
+        agent_name="agent",
+        icon_path="",
+        log_path="test.log",
+        on_restart=lambda: None,
+        on_stop=lambda: None,
+        on_start=lambda: None,
+        on_exit=lambda: None,
+        on_show_log=lambda: None,
+        dark_theme=False,
+    )
+
+    class WindowStateEvent:
+        def type(self):
+            from PyQt5.QtCore import QEvent
+
+            return QEvent.WindowStateChange
+
+    try:
+        from PyQt5.QtCore import Qt
+
+        calls = []
+        win._tray._available = True
+        monkeypatch.setattr(type(win._tray), "is_visible", property(lambda self: False))
+        monkeypatch.setattr(win._win, "windowState", lambda: Qt.WindowMinimized)
+        win._win.hide = lambda: calls.append("hide")
+
+        assert win.eventFilter(win._win, WindowStateEvent()) is False
+        assert calls == []
     finally:
         win._tray.hide()
         win.hide_window()

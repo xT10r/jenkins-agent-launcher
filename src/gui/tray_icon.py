@@ -46,11 +46,19 @@ class TrayIcon:
             lambda r: on_show() if r in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick) else None
         )
         if self._available:
-            self._tray.show()
+            self.show()
 
     @property
     def is_available(self) -> bool:
         return self._available
+
+    @property
+    def is_visible(self) -> bool:
+        return self._available and self._tray.isVisible()
+
+    def show(self):
+        if self._available:
+            self._tray.show()
 
     def set_status(self, text: str):
         self._status_action.setText(f"Статус: {text}")
