@@ -198,7 +198,7 @@ class MainWindow(QObject):
         self._win = QMainWindow()
         title = f"{app_name} - {agent_name}" if agent_name else app_name
         self._win.setWindowTitle(f"{title} v{app_version}")
-        self._win.setMinimumSize(750, 550)
+        self._win.setMinimumSize(1200, 800)
         if __import__("os").path.isfile(icon_path):
             self._win.setWindowIcon(QIcon(icon_path))
 
@@ -211,6 +211,7 @@ class MainWindow(QObject):
 
         self._build_ui()
         self._build_menu()
+        self._win.resize(1200, 800)
 
         # ── Tray ──
         self._tray = TrayIcon(

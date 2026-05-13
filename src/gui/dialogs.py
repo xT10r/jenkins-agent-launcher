@@ -8,7 +8,8 @@ import sys
 
 
 def show_help(parent, app_name: str, app_version: str):
-    from PyQt5.QtWidgets import QMessageBox
+    from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QTextEdit, QVBoxLayout
+
     text = (
         f"{app_name} v{app_version}\n\n"
         "Запуск Jenkins JNLP agent в пользовательской сессии.\n\n"
@@ -51,12 +52,29 @@ def show_help(parent, app_name: str, app_version: str):
         "ИСТОЧНИКИ: defaults → config.json → CLI → ENV\n"
         "ПОДРОБНЕЕ: docs/README.md"
     )
-    QMessageBox.information(parent, "Справка", text)
+    dialog = QDialog(parent)
+    dialog.setWindowTitle("Справка")
+    dialog.resize(760, 600)
+    dialog.setMinimumSize(640, 480)
+
+    layout = QVBoxLayout(dialog)
+    help_text = QTextEdit(dialog)
+    help_text.setReadOnly(True)
+    help_text.setPlainText(text)
+    layout.addWidget(help_text)
+
+    buttons = QDialogButtonBox(QDialogButtonBox.Ok, dialog)
+    buttons.accepted.connect(dialog.accept)
+    layout.addWidget(buttons)
+
+    dialog.exec_()
 
 
 def show_about(parent, app_name: str, app_version: str, company: str, icon_path: str = ""):
     from PyQt5.QtGui import QIcon
-    from PyQt5.QtWidgets import QMessageBox
+    from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QScrollArea, QVBoxLayout
+    from PyQt5.QtCore import Qt
+
     year = datetime.datetime.now().year
     text = (
         f"<h2>{app_name}</h2>"
@@ -81,16 +99,41 @@ def show_about(parent, app_name: str, app_version: str, company: str, icon_path:
         f"<p><b>Спецификация:</b> docs/specification.md</p>"
         f"<p>© {year} {company}</p>"
     )
-    msg = QMessageBox(parent)
-    msg.setWindowTitle("О программе")
-    msg.setTextFormat(__import__("PyQt5.QtCore").QtCore.Qt.RichText)
-    msg.setText(text)
-    msg.setIcon(QMessageBox.Information)
-    msg.setStandardButtons(QMessageBox.Ok)
+    dialog = QDialog(parent)
+    dialog.setWindowTitle("О программе")
+    dialog.resize(960, 880)
+    dialog.setMinimumSize(760, 640)
+
+    layout = QVBoxLayout(dialog)
+    content_layout = QHBoxLayout()
+    content_layout.setSpacing(18)
+    layout.addLayout(content_layout)
 
     if icon_path and os.path.isfile(icon_path):
         icon = QIcon(icon_path)
-        msg.setWindowIcon(icon)
-        msg.setIconPixmap(icon.pixmap(64, 64))
+        dialog.setWindowIcon(icon)
+        icon_label = QLabel(dialog)
+        icon_label.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
+        icon_label.setFixedWidth(112)
+        icon_label.setPixmap(icon.pixmap(96, 96))
+        content_layout.addWidget(icon_label)
 
-    msg.exec_()
+    about_text = QLabel(dialog)
+    about_text.setTextFormat(Qt.RichText)
+    about_text.setWordWrap(True)
+    about_text.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+    about_text.setText(text)
+    about_text.setStyleSheet("background: transparent;")
+
+    scroll = QScrollArea(dialog)
+    scroll.setWidgetResizable(True)
+    scroll.setFrameShape(QScrollArea.NoFrame)
+    scroll.setStyleSheet("QScrollArea { background: transparent; } QScrollArea > QWidget > QWidget { background: transparent; }")
+    scroll.setWidget(about_text)
+    content_layout.addWidget(scroll, 1)
+
+    buttons = QDialogButtonBox(QDialogButtonBox.Ok, dialog)
+    buttons.accepted.connect(dialog.accept)
+    layout.addWidget(buttons)
+
+    dialog.exec_()

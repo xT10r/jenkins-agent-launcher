@@ -1,62 +1,53 @@
 """Тесты GUI-диалогов."""
 
+import os
 from pathlib import Path
+
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QLabel
+from PyQt5.QtWidgets import QTextEdit
 
 from src.gui import dialogs
 
 
-class _FakeMessageBox:
-    Information = object()
-    Ok = object()
+_APP = None
 
-    instances = []
 
-    def __init__(self, parent):
-        self.parent = parent
-        self.window_title = None
-        self.text = None
-        self.window_icon = None
-        self.icon_pixmap = None
-        self.exec_called = False
-        _FakeMessageBox.instances.append(self)
+def _ensure_qapplication():
+    global _APP
+    _APP = QApplication.instance() or _APP or QApplication([])
+    return _APP
 
-    def setWindowTitle(self, value):
-        self.window_title = value
 
-    def setTextFormat(self, value):
-        self.text_format = value
+def test_show_about_applies_icon_when_file_exists():
+    _ensure_qapplication()
 
-    def setText(self, value):
-        self.text = value
+    icon_path = Path("assets/jenkins.ico")
 
-    def setIcon(self, value):
-        self.icon = value
+    shown = {}
 
-    def setStandardButtons(self, value):
-        self.buttons = value
-
-    def setWindowIcon(self, value):
-        self.window_icon = value
-
-    def setIconPixmap(self, value):
-        self.icon_pixmap = value
-
-    def exec_(self):
-        self.exec_called = True
+    def capture_exec(self):
+        shown["dialog"] = self
         return 0
 
+    from PyQt5.QtWidgets import QDialog
 
-def test_show_about_applies_icon_when_file_exists(monkeypatch, tmp_path):
-    icon_path = tmp_path / "test.ico"
-    icon_path.write_bytes(b"ico")
+    original_exec = QDialog.exec_
+    QDialog.exec_ = capture_exec
+    try:
+        dialogs.show_about(None, "App", "1.0", "Company", str(icon_path))
+    finally:
+        QDialog.exec_ = original_exec
 
-    monkeypatch.setattr("PyQt5.QtWidgets.QMessageBox", _FakeMessageBox)
-
-    dialogs.show_about(None, "App", "1.0", "Company", str(icon_path))
-
-    msg = _FakeMessageBox.instances[-1]
-    assert msg.window_title == "О программе"
-    assert "App" in msg.text
-    assert msg.window_icon is not None
-    assert msg.icon_pixmap is not None
-    assert msg.exec_called is True
+    dialog = shown["dialog"]
+    icon_labels = [label for label in dialog.findChildren(QLabel) if label.pixmap()]
+    assert dialog.windowTitle() == "О программе"
+    assert dialog.windowIcon().isNull() is False
+    assert dialog.size().width() == 960
+    assert dialog.size().height() == 880
+    assert dialog.findChildren(QTextEdit) == []
+    assert icon_labels
+    assert icon_labels[0].width() == 112
+    assert icon_labels[0].pixmap().isNull() is False
