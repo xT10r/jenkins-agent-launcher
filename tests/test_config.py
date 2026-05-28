@@ -348,7 +348,7 @@ class TestValidConfig:
 
 
 class TestInvalidConfig:
-    """Невалидная конфигурация — placeholder, пустые поля."""
+    """Невалидная конфигурация - placeholder, пустые поля."""
 
     def test_missing_url(self, tmp_project, valid_config_json):
         valid_config_json["agent"]["jenkinsUrl"] = ""

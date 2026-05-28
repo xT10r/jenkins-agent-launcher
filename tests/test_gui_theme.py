@@ -1,6 +1,6 @@
 """Проверки унификации светлой и тёмной темы GUI."""
 
-from src.gui.main_window import FILETIME_UNIX_EPOCH_OFFSET_SECONDS, MainWindow
+from src.gui.main_window import FILETIME_UNIX_EPOCH_OFFSET_SECONDS, MainWindow, _apply_window_icon
 
 
 def _build_window():
@@ -31,6 +31,14 @@ def _snapshot(win):
     }
 
 
+def _cleanup_window(win):
+    win._process_timer.stop()
+    win._win.removeEventFilter(win)
+    win._tray.hide()
+    win.hide_window()
+    win._app.processEvents()
+
+
 def test_theme_switch_keeps_same_qt_style_and_widget_structure(monkeypatch):
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     win = _build_window()
@@ -40,14 +48,34 @@ def test_theme_switch_keeps_same_qt_style_and_widget_structure(monkeypatch):
         win._toggle_theme()
         after = _snapshot(win)
     finally:
-        win._process_timer.stop()
-        win._tray.hide()
-        win.hide_window()
+        _cleanup_window(win)
 
     assert before["style"] == "fusion"
     assert after["style"] == "fusion"
     assert before["widgets"] == after["widgets"]
     assert before["window_color"] != after["window_color"]
+
+
+def test_apply_window_icon_sets_application_and_window_icon():
+    class Target:
+        def __init__(self):
+            self.icon = None
+
+        def setWindowIcon(self, icon):
+            self.icon = icon
+
+    class Icon:
+        def isNull(self):
+            return False
+
+    app = Target()
+    window = Target()
+    icon = Icon()
+
+    _apply_window_icon(app, window, icon)
+
+    assert app.icon is icon
+    assert window.icon is icon
 
 
 def test_status_updates_button_and_menu_state(monkeypatch):
@@ -107,9 +135,7 @@ def test_status_updates_button_and_menu_state(monkeypatch):
         assert win._process_fields["java"]["ram"].text() == "0 MB"
         assert win._process_fields["java"]["uptime"].text() == "-"
     finally:
-        win._process_timer.stop()
-        win._tray.hide()
-        win.hide_window()
+        _cleanup_window(win)
 
 
 def test_start_minimized_uses_show_minimized(monkeypatch):
@@ -138,9 +164,7 @@ def test_start_minimized_uses_show_minimized(monkeypatch):
         win._show_initial_window()
         assert calls == ["minimized"]
     finally:
-        win._process_timer.stop()
-        win._tray.hide()
-        win.hide_window()
+        _cleanup_window(win)
 
 
 def test_start_minimized_uses_tray_hide_when_tray_available(monkeypatch):
@@ -171,8 +195,7 @@ def test_start_minimized_uses_tray_hide_when_tray_available(monkeypatch):
         win._show_initial_window()
         assert calls == ["show", "tray-hide"]
     finally:
-        win._tray.hide()
-        win.hide_window()
+        _cleanup_window(win)
 
 
 def test_start_minimized_falls_back_to_taskbar_when_tray_icon_not_visible(monkeypatch):
@@ -204,8 +227,7 @@ def test_start_minimized_falls_back_to_taskbar_when_tray_icon_not_visible(monkey
         win._show_initial_window()
         assert calls == ["show", "minimized"]
     finally:
-        win._tray.hide()
-        win.hide_window()
+        _cleanup_window(win)
 
 
 def test_minimize_event_does_not_hide_window_when_tray_icon_not_visible(monkeypatch):
@@ -243,8 +265,7 @@ def test_minimize_event_does_not_hide_window_when_tray_icon_not_visible(monkeypa
         assert win.eventFilter(win._win, WindowStateEvent()) is False
         assert calls == []
     finally:
-        win._tray.hide()
-        win.hide_window()
+        _cleanup_window(win)
 
 
 def test_start_normal_uses_show(monkeypatch):
@@ -272,8 +293,7 @@ def test_start_normal_uses_show(monkeypatch):
         win._show_initial_window()
         assert calls == ["show"]
     finally:
-        win._tray.hide()
-        win.hide_window()
+        _cleanup_window(win)
 
 
 def test_calculate_uptime_seconds_uses_windows_filetime_epoch():

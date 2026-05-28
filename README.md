@@ -168,7 +168,7 @@ jenkins-agent-launcher/
 
 **На машине разработчика:**
 - Python 3.12+
-- `scripts\setup.bat` — установит всё автоматически
+- `scripts\setup.bat` - установит всё автоматически
 
 **На целевой машине (для .exe):**
 - Windows 10/11

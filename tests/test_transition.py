@@ -105,9 +105,9 @@ class TestJenkinsOutage:
     def test_jenkins_comes_back_after_outage(self, config, logger, tmp_proj):
         """
         Сценарий:
-        1. Jenkins доступен — агент запускается
-        2. Jenkins недоступен 2 сек — агент падает
-        3. Jenkins снова доступен — агент рестартит
+        1. Jenkins доступен - агент запускается
+        2. Jenkins недоступен 2 сек - агент падает
+        3. Jenkins снова доступен - агент рестартит
         """
         jenkins_available = [True]
         statuses = []
@@ -133,11 +133,11 @@ class TestJenkinsOutage:
                     # Фаза 1: Jenkins доступен (0-1 сек)
                     time.sleep(1)
 
-                    # Фаза 2: Jenkins недоступен (1-3 сек) — процесс падает
+                    # Фаза 2: Jenkins недоступен (1-3 сек) - процесс падает
                     jenkins_available[0] = False
                     time.sleep(3)
 
-                    # Фаза 3: Jenkins снова доступен (3-5 сек) — рестарт
+                    # Фаза 3: Jenkins снова доступен (3-5 сек) - рестарт
                     jenkins_available[0] = True
                     time.sleep(2)
 
@@ -162,7 +162,7 @@ class TestJenkinsOutage:
 
     def test_brief_outage_no_restart(self, config, logger, tmp_proj):
         """
-        Кратковременная недоступность (менее restart_delay) — не должно рестартовать.
+        Кратковременная недоступность (менее restart_delay) - не должно рестартовать.
         """
         jenkins_available = [True]
         statuses = []
@@ -203,7 +203,7 @@ class TestJenkinsOutage:
 
     def test_permanent_outage_stops_after_max_restarts(self, config, logger, tmp_proj):
         """
-        Jenkins стал недоступен навсегда — после maxRestars должен остановиться.
+        Jenkins стал недоступен навсегда - после maxRestars должен остановиться.
         """
         jenkins_available = [True]
         statuses = []
@@ -268,7 +268,7 @@ class TestLogConsistency:
             assert "доступен" in content
 
     def test_log_has_outage_message(self, config, logger, tmp_proj):
-        """При недоступности Jenkins — должно быть предупреждение."""
+        """При недоступности Jenkins - должно быть предупреждение."""
         def mock_head(*args, **kwargs):
             raise Exception("Connection refused")
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ctypes
 import os
+import re
 import time
 from ctypes import wintypes
 
@@ -59,7 +60,7 @@ DARK_PALETTE = {
     QPalette.HighlightedText: QColor(0, 0, 0),
 }
 
-# Disabled цвета для тёмной темы (серый — виден на тёмном фоне)
+# Disabled цвета для тёмной темы (серый - виден на тёмном фоне)
 DARK_DISABLED = {
     QPalette.WindowText: QColor(100, 100, 100),
     QPalette.Text: QColor(100, 100, 100),
@@ -77,6 +78,30 @@ STATUS_MARKERS = {
     "warn": "[WRN]",
     "err": "[ERR]",
 }
+
+
+def _app_id_part(value: str) -> str:
+    part = re.sub(r"[^A-Za-z0-9]+", ".", value.strip()).strip(".")
+    return part or "App"
+
+
+def _set_windows_app_user_model_id(company: str, app_name: str):
+    if os.name != "nt" or os.environ.get("QT_QPA_PLATFORM", "").lower() == "offscreen":
+        return
+
+    app_id = f"{_app_id_part(company)}.{_app_id_part(app_name)}"
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+    except Exception:
+        pass
+
+
+def _apply_window_icon(app, window, icon: QIcon):
+    if icon.isNull():
+        return
+
+    app.setWindowIcon(icon)
+    window.setWindowIcon(icon)
 
 
 class PROCESS_MEMORY_COUNTERS(ctypes.Structure):
@@ -172,7 +197,11 @@ class MainWindow(QObject):
     ):
         super().__init__()
         from PyQt5.QtWidgets import QApplication
-        self._app = QApplication.instance() or QApplication([app_name])
+
+        existing_app = QApplication.instance()
+        if existing_app is None:
+            _set_windows_app_user_model_id(company, app_name)
+        self._app = existing_app or QApplication([app_name])
         self._app.setQuitOnLastWindowClosed(False)
 
         self._on_theme_change = on_theme_change
@@ -193,16 +222,16 @@ class MainWindow(QObject):
         self._parent_pid = parent_pid
         self._java_pid = 0
         self._current_status_text = "Инициализация..."
+        self._icon = QIcon(icon_path) if os.path.isfile(icon_path) else QIcon()
 
         # ── Window ──
         self._win = QMainWindow()
         title = f"{app_name} - {agent_name}" if agent_name else app_name
         self._win.setWindowTitle(f"{title} v{app_version}")
         self._win.setMinimumSize(1200, 800)
-        if __import__("os").path.isfile(icon_path):
-            self._win.setWindowIcon(QIcon(icon_path))
+        _apply_window_icon(self._app, self._win, self._icon)
 
-        # Сохраняем callback'и (до _build_ui — кнопки подключаются к ним)
+        # Сохраняем callback'и (до _build_ui - кнопки подключаются к ним)
         self._on_exit = on_exit
         self._on_start = on_start
         self._on_restart = on_restart
@@ -394,7 +423,7 @@ class MainWindow(QObject):
         self._btn_start.setEnabled(not running)
         self._btn_restart.setEnabled(running)
         self._btn_stop.setEnabled(running)
-        # Пункты меню — синхронно с кнопками
+        # Пункты меню - синхронно с кнопками
         if hasattr(self, '_act_start'):
             self._act_start.setEnabled(not running)
         if hasattr(self, '_act_restart'):

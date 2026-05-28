@@ -1,6 +1,6 @@
 """
 Оркестратор: скачивание → запуск → мониторинг → рестарт.
-Не зависит от GUI — вызывает callback'и для обновления UI.
+Не зависит от GUI - вызывает callback'и для обновления UI.
 """
 
 from __future__ import annotations
@@ -153,7 +153,7 @@ class AgentController:
                 else:
                     self._safe_log(
                         f"Подхвачен существующий java-процесс Jenkins-агента (PID {pid}). "
-                        "Текущий launcher не будет завершать его при своей остановке.",
+                        "Текущий launcher продолжит управлять им и сможет штатно остановить или перезапустить его.",
                         comp="Launcher",
                     )
                 self._set_status("Работает (подхвачен)", pid)
@@ -229,7 +229,7 @@ class AgentController:
                     self._safe_log("Агент остановлен пользователем", comp="Launcher")
                 else:
                     self._safe_log(
-                        "Launcher остановлен пользователем; подхваченный java-процесс оставлен работать.",
+                        "Launcher остановлен пользователем; подхваченный java-процесс будет остановлен штатно.",
                         comp="Launcher",
                     )
                 break

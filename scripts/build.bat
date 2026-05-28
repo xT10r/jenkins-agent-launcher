@@ -10,6 +10,7 @@ if exist "%PROJECT_DIR%\config\build.json" set BUILD_CFG=%PROJECT_DIR%\config\bu
 if "%BUILD_CFG%"=="" if exist "%PROJECT_DIR%\config\build.template.json" set BUILD_CFG=%PROJECT_DIR%\config\build.template.json
 set GEN_SCRIPT=%PROJECT_DIR%\scripts\_gen_version.py
 set BUILD_DIR=%PROJECT_DIR%\build
+set RUNTIME_INFO=%PROJECT_DIR%\src\_build_info.py
 
 if not exist "%PYTHON%" (
     echo venv не найден. Запустите сначала scripts\setup.bat
@@ -36,8 +37,9 @@ echo.
 
 :: ── Генерируем version script из build.json ──
 mkdir "%BUILD_DIR%" 2>nul
+if exist "%RUNTIME_INFO%" del /q "%RUNTIME_INFO%" >nul 2>&1
 
-:: Запускаем Python-генератор — он создаёт build\_build_vars.bat
+:: Запускаем Python-генератор - он создаёт build\_build_vars.bat
 "%PYTHON%" "%GEN_SCRIPT%" "%BUILD_CFG%" "%BUILD_DIR%"
 if %errorlevel% neq 0 (
     echo ОШИБКА: Не удалось сгенерировать version script
@@ -95,6 +97,7 @@ echo Компиляция...
 if %errorlevel% neq 0 (
     echo.
     echo ОШИБКА: Компиляция не удалась
+    if exist "%RUNTIME_INFO%" del /q "%RUNTIME_INFO%" >nul 2>&1
     pause
     exit /b 1
 )
@@ -123,3 +126,4 @@ if exist "%PROJECT_DIR%\%OUTPUT_EXE%" (
 
 :: ── Уборка ──
 if exist "%PROJECT_DIR%\build" rmdir /s /q "%PROJECT_DIR%\build"
+if exist "%RUNTIME_INFO%" del /q "%RUNTIME_INFO%" >nul 2>&1

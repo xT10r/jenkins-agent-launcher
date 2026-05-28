@@ -1,8 +1,9 @@
 """
 Runtime metadata приложения.
 
-Основной источник версии — config/build.json, чтобы runtime и сборка
-использовали одно и то же значение.
+Основной источник версии - config/build.json. Во время сборки PyInstaller
+дополнительно вшивает src._build_info, чтобы packaged-приложение не зависело
+от внешнего build.json.
 """
 
 from __future__ import annotations
@@ -27,17 +28,30 @@ def _build_json_path(project_dir: Path | None = None) -> Path:
     return base_dir / "config" / "build.json"
 
 
+def _read_embedded_build_info() -> dict:
+    try:
+        from . import _build_info
+    except Exception:
+        return {}
+
+    info = getattr(_build_info, "BUILD_INFO", {})
+    return info if isinstance(info, dict) else {}
+
+
 def get_app_version(project_dir: Path | None = None) -> str:
     """Версия приложения для runtime-логов и GUI."""
     build_json = _build_json_path(project_dir)
-    if not build_json.exists():
-        return DEFAULT_APP_VERSION
+    cfg = {}
+    if build_json.exists():
+        try:
+            with open(build_json, encoding="utf-8") as f:
+                loaded = json.load(f)
+                cfg = loaded if isinstance(loaded, dict) else {}
+        except Exception:
+            cfg = {}
 
-    try:
-        with open(build_json, encoding="utf-8") as f:
-            cfg = json.load(f)
-    except Exception:
-        return DEFAULT_APP_VERSION
+    if not cfg:
+        cfg = _read_embedded_build_info()
 
     version = str(cfg.get("version") or "").strip()
     return version or DEFAULT_APP_VERSION

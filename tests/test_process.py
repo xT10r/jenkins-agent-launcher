@@ -56,7 +56,7 @@ class TestProcess:
         # Для реального теста нужен mock java
 
     def test_java_not_found(self, monkeypatch):
-        """Если java нет — start вернёт None."""
+        """Если java нет - start вернёт None."""
         monkeypatch.setattr("src.process.shutil.which", lambda name: None)
         monkeypatch.delenv("JAVA_HOME", raising=False)
 

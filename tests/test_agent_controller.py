@@ -276,7 +276,7 @@ class TestControllerBreaking:
         assert ctrl is not None
 
     def test_unreachable_jenkins(self, tmp_path, logger):
-        """Jenkins недоступен — контроллер должен обработать."""
+        """Jenkins недоступен - контроллер должен обработать."""
         cfg = AppConfig()
         cfg.agent.jenkins_url = "https://192.0.2.1:12345"
         cfg.agent.agent_name = "test"
@@ -295,7 +295,7 @@ class TestControllerBreaking:
         assert len(statuses) > 0
 
     def test_max_restarts_zero(self, tmp_path, logger):
-        """maxRestarts=0 — не должно рестартовать."""
+        """maxRestarts=0 - не должно рестартовать."""
         cfg = AppConfig()
         cfg.agent.jenkins_url = "https://example.com"
         cfg.agent.agent_name = "test"
@@ -326,12 +326,12 @@ class TestControllerBreaking:
         ctrl.stop()
 
     def test_stop_without_start(self, valid_config, logger):
-        """Stop без start — не должен упасть."""
+        """Stop без start - не должен упасть."""
         ctrl = AgentController(valid_config, logger)
         ctrl.stop()
 
     def test_status_callback_raises(self, valid_config, logger):
-        """Callback on_status падает — контроллер не должен упасть."""
+        """Callback on_status падает - контроллер не должен упасть."""
         def raising_cb(text, pid):
             raise RuntimeError("callback error")
 
@@ -341,7 +341,7 @@ class TestControllerBreaking:
         ctrl.stop()
 
     def test_logger_raises(self, tmp_path, valid_config):
-        """Logger падает при записи — контроллер не должен упасть."""
+        """Logger падает при записи - контроллер не должен упасть."""
         raising_logger = MagicMock()
         raising_logger.log.side_effect = RuntimeError("log error")
 

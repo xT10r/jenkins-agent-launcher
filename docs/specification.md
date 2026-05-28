@@ -2,7 +2,7 @@
 
 ## Назначение
 
-`Jenkins Agent Launcher` — Windows-приложение на Python/PyQt5, которое запускает `agent.jar`, показывает статус в GUI и пишет лог работы агента.
+`Jenkins Agent Launcher` - Windows-приложение на Python/PyQt5, которое запускает `agent.jar`, показывает статус в GUI и пишет лог работы агента.
 
 ## Поддерживаемые режимы
 

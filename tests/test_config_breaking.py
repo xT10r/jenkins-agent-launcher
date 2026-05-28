@@ -8,14 +8,14 @@ from src.config import resolve_config
 
 
 class TestBrokenJSON:
-    """Сломанный JSON — должно не падать, а возвращать ошибки валидации."""
+    """Сломанный JSON - должно не падать, а возвращать ошибки валидации."""
 
     def test_empty_file(self, tmp_path):
         (tmp_path / "config.json").write_text("")
         cfg, errors = resolve_config(tmp_path, {
             "jenkins_url": "https://ok.com", "agent_name": "a", "secret": "s"
         })
-        # Без валидного JSON — должны быть дефолты
+        # Без валидного JSON - должны быть дефолты
         assert isinstance(cfg.behavior.max_restarts, int)
 
     def test_not_json(self, tmp_path):
@@ -45,7 +45,7 @@ class TestBrokenJSON:
             "agent": {"jenkinsUrl": 12345, "agentName": True, "secret": []},
             "behavior": {"maxRestarts": "not_a_number"},
         }))
-        # Должно gracefully обработать — не упасть
+        # Должно gracefully обработать - не упасть
         cfg, errors = resolve_config(tmp_path)
         assert cfg is not None
 
@@ -66,7 +66,7 @@ class TestBrokenJSON:
         # BOM ����, �� JSON ���������\n        assert cfg is not None
 
     def test_huge_json(self, tmp_path):
-        # 1MB JSON — должно обработать без OOM
+        # 1MB JSON - должно обработать без OOM
         big = {"padding": "x" * 1_000_000, "agent": {"jenkinsUrl": "https://ok.com", "agentName": "a", "secret": "s"}}
         (tmp_path / "config.json").write_text(json.dumps(big))
         cfg, errors = resolve_config(tmp_path)
@@ -77,7 +77,7 @@ class TestBrokenJSON:
         cfg, errors = resolve_config(tmp_path, {
             "jenkins_url": "https://ok.com", "agent_name": "a", "secret": "s"
         })
-        # Массив вместо объекта — fallback на CLI
+        # Массив вместо объекта - fallback на CLI
         # BOM ����, �� JSON ���������\n        assert cfg is not None
 
 
@@ -108,7 +108,7 @@ class TestMissingConfig:
     """Отсутствующий config.json."""
 
     def test_no_config_at_all(self, tmp_path):
-        # Нет config.json — только CLI
+        # Нет config.json - только CLI
         cfg, errors = resolve_config(tmp_path, {
             "jenkins_url": "https://ok.com",
             "agent_name": "a",

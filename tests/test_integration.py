@@ -379,7 +379,7 @@ class TestDownloaderIntegration:
 
         # Должны быть вызовы прогресса
         assert len(progress_calls) >= 2
-        # Последний вызов — 100%
+        # Последний вызов - 100%
         assert progress_calls[-1] == (100, 100)
 
     def test_download_with_retry(self, tmp_proj):

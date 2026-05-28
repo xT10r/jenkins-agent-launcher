@@ -1,4 +1,4 @@
-"""Wrapper для PyInstaller — точка входа вне пакета src."""
+"""Wrapper для PyInstaller - точка входа вне пакета src."""
 import sys
 import os
 

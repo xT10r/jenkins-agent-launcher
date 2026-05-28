@@ -17,7 +17,7 @@ class TestBrokenProcess:
     """Тесты с некорректными/ломающими параметрами."""
 
     def test_empty_secret(self, tmp_path):
-        """Пустой секрет — должен создать пустой файл."""
+        """Пустой секрет - должен создать пустой файл."""
         proc = AgentProcess(
             jenkins_url="https://example.com",
             agent_jar="/tmp/test.jar",
@@ -32,7 +32,7 @@ class TestBrokenProcess:
         proc.cleanup()
 
     def test_very_long_secret(self, tmp_path):
-        """Очень длинный секрет — 10KB."""
+        """Очень длинный секрет - 10KB."""
         proc = AgentProcess(
             jenkins_url="https://example.com",
             agent_jar="/tmp/test.jar",
@@ -87,7 +87,7 @@ class TestBrokenProcess:
             env = proc._isolated_env()
             # Точное совпадение должно быть удалено
             assert "JENKINS_SECRET" not in env
-            # Но похожие — остаться
+            # Но похожие - остаться
             assert "JENKINS_SECRET_EXTRA" in env
         finally:
             del os.environ["JENKINS_SECRET_EXTRA"]
@@ -111,7 +111,7 @@ class TestProcessRace:
         proc.cleanup()
 
     def test_double_cleanup(self, tmp_path):
-        """Двойной cleanup — не должен упасть."""
+        """Двойной cleanup - не должен упасть."""
         proc = AgentProcess(
             jenkins_url="https://example.com",
             agent_jar="/tmp/test.jar",
@@ -121,7 +121,7 @@ class TestProcessRace:
         )
         proc._create_secret_file()
         proc.cleanup()
-        proc.cleanup()  # Второй раз — не должен упасть
+        proc.cleanup()  # Второй раз - не должен упасть
 
     def test_cleanup_without_secret(self, tmp_path):
         """Cleanup без создания секрет-файла."""

@@ -6,14 +6,14 @@ from src.ssl_check import check_ssl, _parse_cert
 
 class TestSSLCheck:
     def test_http_url_no_ssl(self):
-        """HTTP URL — SSL-проверка не требуется."""
+        """HTTP URL - SSL-проверка не требуется."""
         result = check_ssl("http://example.com")
         assert result["https"] is False
         assert result.get("info") is None
         assert result.get("error") is None
 
     def test_unreachable_host(self):
-        """Недоступный хост — ошибка подключения."""
+        """Недоступный хост - ошибка подключения."""
         result = check_ssl("https://192.0.2.1", timeout=2)
         assert result["https"] is True
         assert result["info"] is None
@@ -30,7 +30,7 @@ class TestSSLCheck:
             assert result["info"]["status"] == "OK"
 
     def test_self_signed_cert(self):
-        """Самоподписанный сертификат — должен быть получен."""
+        """Самоподписанный сертификат - должен быть получен."""
         result = check_ssl("https://self-signed.badssl.com", timeout=10)
         assert result["https"] is True
         # Сертификат получен даже если self-signed
@@ -42,7 +42,7 @@ class TestHTTPFallback:
     """Проверка что HTTP URL корректно обрабатывается."""
 
     def test_http_no_ssl(self):
-        """HTTP — возвращается {https: False}."""
+        """HTTP - возвращается {https: False}."""
         result = check_ssl("http://example.com:8080")
         assert result == {"https": False}
 
@@ -69,7 +69,7 @@ class TestInvalidCertificates:
         """Истёкший сертификат."""
         result = check_ssl("https://expired.badssl.com", timeout=10)
         assert result["https"] is True
-        # Сертификат должен быть получен, но статус — не OK
+        # Сертификат должен быть получен, но статус - не OK
         if result.get("info"):
             assert result["info"]["valid"] is False
             assert "ИСТЁК" in result["info"]["status"]
@@ -94,7 +94,7 @@ class TestInvalidCertificates:
         """Отозванный сертификат (может не работать если badssl.com недоступен)."""
         result = check_ssl("https://revoked.badssl.com", timeout=10)
         assert result["https"] is True
-        # Сертификат может быть получен или нет — главное не падать
+        # Сертификат может быть получен или нет - главное не падать
 
 
 class TestParseCert:
@@ -117,7 +117,7 @@ class TestParseCert:
             assert info["status"] == "OK"
 
     def test_parse_returns_empty_on_error(self):
-        """Недоступный хост — пустая информация."""
+        """Недоступный хост - пустая информация."""
         result = check_ssl("https://192.0.2.1", timeout=2)
         # info = None при недоступности хоста
         assert result["info"] is None
@@ -143,9 +143,9 @@ class TestEdgeCases:
         assert result["https"] is True
 
     def test_very_short_timeout(self):
-        """Очень короткий таймаут — должен вернуть ошибку."""
+        """Очень короткий таймаут - должен вернуть ошибку."""
         result = check_ssl("https://www.google.com", timeout=0.001)
-        # Либо error, либо info — главное не падать
+        # Либо error, либо info - главное не падать
         assert result["https"] is True
         assert "error" in result or "info" in result
 

@@ -251,7 +251,7 @@ class AppConfig:
         """Полная валидация конфигурации."""
         errs: list[str] = []
 
-        # Нормализация типов — защитить от wrong types
+        # Нормализация типов - защитить от wrong types
         url = str(self.agent.jenkins_url) if self.agent.jenkins_url else ""
         name = str(self.agent.agent_name) if self.agent.agent_name else ""
         secret = str(self.agent.secret) if self.agent.secret else ""
@@ -262,17 +262,17 @@ class AppConfig:
 
         # Проверка обязательных полей агента
         if not url:
-            errs.append("JenkinsUrl не задан — укажите URL Jenkins-сервера")
+            errs.append("JenkinsUrl не задан - укажите URL Jenkins-сервера")
         elif any(p in url for p in _PLACEHOLDERS):
-            errs.append("JenkinsUrl не задан — в config.json пример (example.com)")
+            errs.append("JenkinsUrl не задан - в config.json пример (example.com)")
 
         if not name:
-            errs.append("AgentName не задан — укажите имя агента")
+            errs.append("AgentName не задан - укажите имя агента")
 
         if not secret:
-            errs.append("Secret не задан — укажите секрет из Jenkins UI")
+            errs.append("Secret не задан - укажите секрет из Jenkins UI")
         elif any(p in secret for p in _PLACEHOLDERS):
-            errs.append("Secret не задан — в config.json пример (CHANGE_ME)")
+            errs.append("Secret не задан - в config.json пример (CHANGE_ME)")
 
         # Проверка настроек логов
         errs.extend(self.logging.validate())
@@ -286,7 +286,7 @@ class AppConfig:
         """
         Итоговая политика TLS-проверки для Jenkins URL.
 
-        Если флаг явно задан — использовать его.
+        Если флаг явно задан - использовать его.
         Иначе для HTTPS включать проверку, для незащищённых адресов выключать.
         """
         if self.agent.verify_ssl is not None:

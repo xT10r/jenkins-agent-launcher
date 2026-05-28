@@ -66,10 +66,10 @@ class TestSecretFile:
         proc._create_secret_file()
         fpath = proc._secret_file
 
-        # До cleanup — секрет на месте
+        # До cleanup - секрет на месте
         assert open(fpath, "rb").read() == LONG_VALUE.encode("utf-8")
 
-        # После cleanup — файл перезаписан нулями
+        # После cleanup - файл перезаписан нулями
         proc.cleanup()
         assert not os.path.isfile(fpath)
 

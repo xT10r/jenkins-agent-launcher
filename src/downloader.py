@@ -52,7 +52,7 @@ class AgentJarDownloader:
         """
         # Уже есть
         if os.path.isfile(self.dest_path):
-            self.log("agent.jar найден — скачивание пропущено", comp="Download")
+            self.log("agent.jar найден - скачивание пропущено", comp="Download")
             return True
 
         # Создать директорию

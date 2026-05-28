@@ -22,7 +22,7 @@ echo.
 
 :: Создание venv
 if exist "%PROJECT_DIR%\venv" (
-    echo venv уже существует — обновляю зависимости...
+    echo venv уже существует - обновляю зависимости...
 ) else (
     echo Создаю виртуальное окружение: venv\
     python -m venv "%PROJECT_DIR%\venv"

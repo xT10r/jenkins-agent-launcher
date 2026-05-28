@@ -26,6 +26,7 @@ htmlcov/
 build/
 dist/
 *.spec
+src/_build_info.py
 
 # PyInstaller / packaged binaries
 *.exe

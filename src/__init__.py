@@ -1,4 +1,4 @@
-"""Jenkins JNLP Agent Launcher — пакет."""
+"""Jenkins JNLP Agent Launcher - пакет."""
 
 __all__ = [
     "config",
