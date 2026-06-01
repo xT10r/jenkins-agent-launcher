@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-setlocal enabledelayedexpansion
+setlocal
 
 set PROJECT_DIR=%~dp0..
 set PYTHON=%PROJECT_DIR%\venv\Scripts\python.exe
@@ -9,6 +9,7 @@ set BUILD_CFG=
 if exist "%PROJECT_DIR%\config\build.json" set BUILD_CFG=%PROJECT_DIR%\config\build.json
 if "%BUILD_CFG%"=="" if exist "%PROJECT_DIR%\config\build.template.json" set BUILD_CFG=%PROJECT_DIR%\config\build.template.json
 set GEN_SCRIPT=%PROJECT_DIR%\scripts\_gen_version.py
+set RUN_PYI_SCRIPT=%PROJECT_DIR%\scripts\_run_pyinstaller.py
 set BUILD_DIR=%PROJECT_DIR%\build
 set RUNTIME_INFO=%PROJECT_DIR%\src\_build_info.py
 
@@ -26,6 +27,12 @@ if not exist "%BUILD_CFG%" (
 
 if not exist "%GEN_SCRIPT%" (
     echo scripts/_gen_version.py не найден
+    pause
+    exit /b 1
+)
+
+if not exist "%RUN_PYI_SCRIPT%" (
+    echo scripts/_run_pyinstaller.py не найден
     pause
     exit /b 1
 )
@@ -51,35 +58,23 @@ if %errorlevel% neq 0 (
 call "%BUILD_DIR%\_build_vars.bat"
 
 :: Значения по умолчанию если что-то не попало
-if "%OUTPUT_EXE%"=="" set OUTPUT_EXE=jenkins-agent.exe
-if "%EXE_NAME%"=="" set EXE_NAME=jenkins-agent
-if "%VER_SCRIPT%"=="" set VER_SCRIPT=%BUILD_DIR%\_version.py
+if not defined OUTPUT_EXE set OUTPUT_EXE=jenkins-agent.exe
+if not defined EXE_NAME set EXE_NAME=jenkins-agent
+if not defined VER_SCRIPT set VER_SCRIPT=%BUILD_DIR%\_version.py
 
-:: Формируем аргументы PyInstaller
-set PYI_ARGS=--onefile --clean --name %EXE_NAME% --distpath "%PROJECT_DIR%" --workpath "%BUILD_DIR%" --specpath "%BUILD_DIR%" --hidden-import=cryptography --hidden-import=PyQt5 --paths="%PROJECT_DIR%"
+echo   Output exe:     %OUTPUT_EXE%
+echo   PyInstaller:    %EXE_NAME%
 
 :: Версия
-if exist "%VER_SCRIPT%" (
-    set PYI_ARGS=%PYI_ARGS% --version-file "%VER_SCRIPT%"
-    echo   Версия:         из build/_version.py
-)
+if exist "%VER_SCRIPT%" echo   Версия:         из build/_version.py
 
 :: Иконка
-if defined ICON (
-    if exist "%ICON%" set PYI_ARGS=%PYI_ARGS% --icon "%ICON%"
-    if exist "%ICON%" set PYI_ARGS=%PYI_ARGS% --add-data "%ICON%;assets"
-    echo   Иконка:         %ICON%
-) else (
-    echo   Иконка:         не найдена
-)
+if defined ICON echo   Иконка:         %ICON%
+if not defined ICON echo   Иконка:         не найдена
 
 :: Режим окна
-if /i "%NOCONSOLE%"=="true" (
-    set PYI_ARGS=%PYI_ARGS% --windowed
-    echo   Режим:          GUI
-) else (
-    echo   Режим:          Console
-)
+if /i "%NOCONSOLE%"=="true" echo   Режим:          GUI
+if /i not "%NOCONSOLE%"=="true" echo   Режим:          Console
 
 echo.
 
@@ -92,7 +87,7 @@ if %errorlevel% neq 0 (
 
 :: ── Компиляция ──
 echo Компиляция...
-"%PYTHON%" -m PyInstaller %PYI_ARGS% "%SRC%"
+"%PYTHON%" "%RUN_PYI_SCRIPT%" "%BUILD_DIR%\_build_vars.json" "%PROJECT_DIR%" "%BUILD_DIR%" "%SRC%"
 
 if %errorlevel% neq 0 (
     echo.
