@@ -75,3 +75,32 @@ def test_gen_version_fails_when_configured_icon_is_missing(tmp_path):
 
     assert result.returncode == 1
     assert "iconPath not found" in result.stdout
+
+
+def test_gen_version_uses_repository_company_default(tmp_path):
+    project = tmp_path
+    (project / "src").mkdir()
+    config_dir = project / "config"
+    output_dir = project / "build"
+    config_dir.mkdir()
+    build_json = config_dir / "build.json"
+    build_json.write_text(
+        json.dumps(
+            {
+                "outputExe": "agent-launcher.exe",
+                "version": "0.0.1",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    subprocess.run(
+        [sys.executable, "scripts/_gen_version.py", str(build_json), str(output_dir)],
+        check=True,
+        cwd=Path(__file__).resolve().parent.parent,
+    )
+
+    version_script = (output_dir / "_version.py").read_text(encoding="utf-8")
+    old_company = "B" + "IATECH"
+    assert "Jenkins Agent Launcher Contributors" in version_script
+    assert old_company not in version_script
