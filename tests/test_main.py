@@ -131,6 +131,11 @@ class TestParseArgs:
         args = _parse_args()
         assert args.fallback_url == "https://downloads.example.com/agent.jar"
 
+    def test_temp_dir(self, monkeypatch):
+        monkeypatch.setattr("sys.argv", ["jenkins-agent", "--temp-dir", "runtime/tmp"])
+        args = _parse_args()
+        assert args.temp_dir == "runtime/tmp"
+
 
 class TestCliToDict:
     """Тесты конвертации Namespace → dict."""
@@ -192,12 +197,14 @@ class TestCliToDict:
             "jenkins-agent",
             "--fallback-url", "https://downloads.example.com/agent.jar",
             "--jar-path", "agent.jar",
+            "--temp-dir", "runtime/tmp",
             "--timeout", "45",
         ])
         args = _parse_args()
         result = _cli_to_dict(args)
         assert result["fallback_jar_url"] == "https://downloads.example.com/agent.jar"
         assert result["agent_jar_path"] == "agent.jar"
+        assert result["temp_dir"] == "runtime/tmp"
         assert result["jenkins_timeout"] == 45
 
 

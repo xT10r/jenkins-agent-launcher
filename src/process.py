@@ -57,6 +57,7 @@ def build_launch_signature(
     direct: str = "",
     instance_identity: str = "",
     protocols: str = "",
+    temp_dir: str = "",
 ) -> str:
     payload = {
         "jenkins_url": _normalize_url(jenkins_url),
@@ -68,6 +69,7 @@ def build_launch_signature(
         "direct": str(direct).strip(),
         "instance_identity": str(instance_identity).strip(),
         "protocols": str(protocols).strip(),
+        "temp_dir": _normalize_path(temp_dir),
     }
     raw = json.dumps(payload, ensure_ascii=True, sort_keys=True).encode("utf-8")
     return hashlib.sha256(raw).hexdigest()[:16]
@@ -128,6 +130,8 @@ def _parse_agent_arguments(args: list[str]) -> dict[str, str | bool]:
             parsed["launcher_signature"] = item.split("=", 1)[1]
         elif item == "-Djenkins.launcher.role=agent-child":
             parsed["launcher_role"] = "agent-child"
+        elif item.startswith("-Djava.io.tmpdir="):
+            parsed["java_tmpdir"] = item.split("=", 1)[1]
         elif item in options_with_values and i + 1 < len(args):
             parsed[item] = args[i + 1]
             i += 1
@@ -353,7 +357,7 @@ class AgentProcess:
         "JENKINS_SECRET", "JENKINS_AGENT_NAME", "JENKINS_TUNNEL",
         "JENKINS_WEB_SOCKET", "JENKINS_DIRECT_CONNECTION",
         "JENKINS_INSTANCE_IDENTITY", "JENKINS_PROTOCOLS",
-        "JENKINS_JAVA_OPTS", "JENKINS_FALLBACK_JAR_PATH",
+        "JENKINS_JAVA_OPTS", "JENKINS_TEMP_DIR", "JENKINS_FALLBACK_JAR_PATH",
     )
 
     def __init__(
@@ -370,6 +374,7 @@ class AgentProcess:
         protocols: str = "",
         java_opts: str = "",
         java_home: str = "",
+        temp_dir: str = "",
         java_cmd: str = "",
         isolated_vars: Iterable[str] | None = None,
         on_line: Callable[[str], None] | None = None,
@@ -386,6 +391,7 @@ class AgentProcess:
         self.protocols = protocols
         self.java_opts = java_opts
         self.java_home = java_home
+        self.temp_dir = temp_dir
         self.java_cmd = java_cmd
         self.isolated_vars = tuple(isolated_vars or self.ISOLATED_VARS)
         self.on_line = on_line
@@ -410,6 +416,7 @@ class AgentProcess:
             direct=self.direct,
             instance_identity=self.instance_identity,
             protocols=self.protocols,
+            temp_dir=self.temp_dir,
         )
 
     @property
@@ -546,6 +553,8 @@ class AgentProcess:
         cmd = [java]
         if self.java_opts:
             cmd += shlex.split(self.java_opts, posix=True)
+        if self.temp_dir:
+            cmd.append(f"-Djava.io.tmpdir={self.temp_dir}")
         cmd += [
             "-Djenkins.launcher.role=agent-child",
             f"-Djenkins.launcher.agentName={self.agent_name}",
@@ -578,13 +587,20 @@ class AgentProcess:
         return env
 
     def _create_secret_file(self) -> str:
-        fd, path = tempfile.mkstemp(prefix="jenkins-secret-", suffix=".tmp")
+        temp_dir = self._ensure_temp_dir()
+        fd, path = tempfile.mkstemp(prefix="jenkins-secret-", suffix=".tmp", dir=temp_dir)
         try:
             os.write(fd, self.secret.encode("utf-8"))
         finally:
             os.close(fd)
         self._secret_file = path
         return f"@{path}"
+
+    def _ensure_temp_dir(self) -> str | None:
+        if not self.temp_dir:
+            return None
+        os.makedirs(self.temp_dir, exist_ok=True)
+        return self.temp_dir
 
     def _resolve_cwd(self) -> str | None:
         candidate_dirs = [
@@ -614,11 +630,12 @@ class AgentProcess:
             "-direct": self.direct.strip(),
             "-instanceIdentity": self.instance_identity.strip(),
             "-protocols": self.protocols.strip(),
+            "java_tmpdir": _normalize_path(self.temp_dir),
         }
         for option, expected in expected_pairs.items():
             actual_raw = parsed.get(option)
             actual = str(actual_raw).strip() if actual_raw is not None else ""
-            if option in {"-jar", "-workDir"}:
+            if option in {"-jar", "-workDir", "java_tmpdir"}:
                 actual = _normalize_path(actual)
             elif option == "-url":
                 actual = _normalize_url(actual)

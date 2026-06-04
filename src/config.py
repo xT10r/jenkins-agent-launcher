@@ -51,6 +51,10 @@ DEFAULT_IGNORED_ENV_VARS = (
         "reason": "JVM-параметры launcher не должны утекать в дочерний процесс через общий ENV.",
     },
     {
+        "name": "JENKINS_TEMP_DIR",
+        "reason": "Временный каталог должен передаваться только явно собранными JVM-параметрами launcher.",
+    },
+    {
         "name": "JENKINS_FALLBACK_JAR_PATH",
         "reason": "Резервный URL управляется конфигом launcher и не должен оставаться в ENV дочернего процесса.",
     },
@@ -71,6 +75,7 @@ class AgentConfig:
     protocols: str = ""
     java_opts: str = ""
     java_home: str = ""
+    temp_dir: str = ""
     fallback_jar_url: str = ""
     workdir: str = ""
     agent_jar_path: str = ""
@@ -125,6 +130,15 @@ class DownloadConfig:
         if self.retry_delay <= 0:
             errs.append("retryDelay должен быть > 0")
         return errs
+
+
+@dataclass
+class JnlpConfig:
+    """Настройки получения данных агента из JNLP."""
+    enabled: bool = False
+    url: str = ""
+    refresh_secret: bool = False
+    save_secret: bool = False
 
 
 @dataclass
@@ -241,6 +255,7 @@ class AppConfig:
     behavior: BehaviorConfig = field(default_factory=BehaviorConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     download: DownloadConfig = field(default_factory=DownloadConfig)
+    jnlp: JnlpConfig = field(default_factory=JnlpConfig)
     update: UpdateConfig = field(default_factory=UpdateConfig)
     ui: UIConfig = field(default_factory=UIConfig)
     environment: EnvironmentConfig = field(default_factory=EnvironmentConfig)
@@ -269,9 +284,9 @@ class AppConfig:
         if not name:
             errs.append("AgentName не задан - укажите имя агента")
 
-        if not secret:
+        if not secret and not self.jnlp.enabled:
             errs.append("Secret не задан - укажите секрет из Jenkins UI")
-        elif any(p in secret for p in _PLACEHOLDERS):
+        elif secret and any(p in secret for p in _PLACEHOLDERS) and not self.jnlp.enabled:
             errs.append("Secret не задан - в config.json пример (CHANGE_ME)")
 
         # Проверка настроек логов
@@ -484,6 +499,8 @@ def resolve_config(
                 cfg.agent.tunnel = a.get("tunnel", "")
             if a.get("javaHome"):
                 cfg.agent.java_home = _resolve_path(str(a["javaHome"]), project_dir)
+            if a.get("tempDir"):
+                cfg.agent.temp_dir = _resolve_path(str(a["tempDir"]), project_dir)
             if a.get("workDir"):
                 cfg.agent.workdir = os.path.expandvars(a["workDir"])
             if a.get("agentJarName"):
@@ -528,6 +545,17 @@ def resolve_config(
                 cfg.download.retry_delay = int(dl["retryDelaySeconds"])
             if dl.get("chunkSize") is not None:
                 cfg.download.chunk_size = int(dl["chunkSize"])
+
+            jnlp = raw.get("jnlp", {})
+            if isinstance(jnlp, dict):
+                if jnlp.get("enabled") is not None:
+                    cfg.jnlp.enabled = bool(jnlp["enabled"])
+                if jnlp.get("url"):
+                    cfg.jnlp.url = str(jnlp["url"]).strip()
+                if jnlp.get("refreshSecret") is not None:
+                    cfg.jnlp.refresh_secret = bool(jnlp["refreshSecret"])
+                if jnlp.get("saveSecret") is not None:
+                    cfg.jnlp.save_secret = bool(jnlp["saveSecret"])
 
             up = raw.get("update", {})
             if up.get("enabled") is not None:
@@ -601,6 +629,7 @@ def resolve_config(
         ("protocols", "protocols"),
         ("java_opts", "java_opts"),
         ("java_home", "java_home"),
+        ("temp_dir", "temp_dir"),
         ("fallback_jar_url", "fallback_jar_url"),
         ("work_dir", "workdir"),
         ("agent_jar_path", "agent_jar_path"),
@@ -615,6 +644,18 @@ def resolve_config(
 
     if cli_args.get("websocket"):
         cfg.agent.websocket = True
+
+    if cli_args.get("jnlp"):
+        cfg.jnlp.enabled = True
+    if cli_args.get("jnlp_url"):
+        cfg.jnlp.url = str(cli_args["jnlp_url"]).strip()
+        cfg.jnlp.enabled = True
+    if cli_args.get("jnlp_refresh_secret"):
+        cfg.jnlp.refresh_secret = True
+        cfg.jnlp.enabled = True
+    if cli_args.get("jnlp_save_secret"):
+        cfg.jnlp.save_secret = True
+        cfg.jnlp.enabled = True
 
     if cli_args.get("no_auto_update"):
         cfg.behavior.auto_update = False
@@ -637,6 +678,7 @@ def resolve_config(
         "JENKINS_INSTANCE_IDENTITY": ("agent", "instance_identity"),
         "JENKINS_PROTOCOLS": ("agent", "protocols"),
         "JENKINS_JAVA_OPTS": ("agent", "java_opts"),
+        "JENKINS_TEMP_DIR": ("agent", "temp_dir"),
         "JENKINS_FALLBACK_JAR_PATH": ("agent", "fallback_jar_url"),
     }
     for var, (section, attr) in env_map.items():
@@ -647,6 +689,9 @@ def resolve_config(
     ws = os.environ.get("JENKINS_WEB_SOCKET", "").lower()
     if ws in ("true", "1", "yes", "on"):
         cfg.agent.websocket = True
+
+    if cfg.agent.temp_dir:
+        cfg.agent.temp_dir = _resolve_path(cfg.agent.temp_dir, project_dir)
 
     # Валидация
     errors = cfg.validate()

@@ -32,6 +32,7 @@ def _instance_signature(config: AppConfig) -> str:
         "agent_name": config.agent.agent_name.strip().lower(),
         "workdir": config.agent.workdir.strip().lower(),
         "agent_jar_path": config.agent.agent_jar_path.strip().lower(),
+        "temp_dir": config.agent.temp_dir.strip().lower(),
         "tunnel": config.agent.tunnel.strip().lower(),
         "direct": config.agent.direct.strip().lower(),
         "websocket": bool(config.agent.websocket),

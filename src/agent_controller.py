@@ -13,6 +13,7 @@ import requests
 
 from .config import AppConfig
 from .downloader import AgentJarDownloader
+from .jnlp import JnlpSecretResolver
 from .logger import RotatingLogger
 from .process import AgentProcess, resolve_java_command
 from .ssl_check import check_ssl
@@ -107,6 +108,13 @@ class AgentController:
         self._restart_count = 0
 
         while not self._stop.is_set():
+            if self.config.jnlp.enabled:
+                resolver = JnlpSecretResolver(self.config, log_fn=self._safe_log)
+                if not resolver.ensure_secret():
+                    self._set_status("Нет secret")
+                    self._fail_post_update("Не удалось получить Jenkins secret из JNLP после self-update")
+                    return
+
             proc = AgentProcess(
                 jenkins_url=a.jenkins_url,
                 agent_jar=a.agent_jar_path,
@@ -120,6 +128,7 @@ class AgentController:
                 protocols=a.protocols,
                 java_opts=a.java_opts,
                 java_home=a.java_home,
+                temp_dir=a.temp_dir,
                 java_cmd=java_cmd,
                 isolated_vars=[item.name for item in self.config.environment.ignored_vars],
                 on_line=self._handle_agent_output,

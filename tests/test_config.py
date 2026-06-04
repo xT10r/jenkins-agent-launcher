@@ -303,6 +303,24 @@ class TestValidConfig:
         assert not errors
         assert cfg.agent.java_home == str(absolute_java_home)
 
+    def test_temp_dir_accepts_relative_path(self, tmp_project, valid_config_json):
+        valid_config_json["agent"]["tempDir"] = "runtime/tmp"
+        (tmp_project / "config.json").write_text(json.dumps(valid_config_json), encoding="utf-8")
+
+        cfg, errors = resolve_config(tmp_project)
+
+        assert not errors
+        assert cfg.agent.temp_dir == str((tmp_project / "runtime" / "tmp").resolve())
+
+    def test_temp_dir_env_override_is_resolved(self, tmp_project, valid_config_json, monkeypatch):
+        (tmp_project / "config.json").write_text(json.dumps(valid_config_json), encoding="utf-8")
+        monkeypatch.setenv("JENKINS_TEMP_DIR", "env-tmp")
+
+        cfg, errors = resolve_config(tmp_project)
+
+        assert not errors
+        assert cfg.agent.temp_dir == str((tmp_project / "env-tmp").resolve())
+
     def test_log_file_name_uses_logging_dir_for_simple_filename(self, tmp_project, valid_config_json):
         valid_config_json["agent"]["logFileName"] = "runtime.log"
         (tmp_project / "config.json").write_text(json.dumps(valid_config_json), encoding="utf-8")

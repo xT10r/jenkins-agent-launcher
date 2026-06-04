@@ -121,6 +121,38 @@ class TestProcess:
         assert any(item.startswith("-Djenkins.launcher.parentPid=") for item in cmd)
         assert f"-Djenkins.launcher.signature={proc.launch_signature}" in cmd
 
+    def test_temp_dir_is_added_to_java_command(self, tmp_path):
+        temp_dir = tmp_path / "runtime" / "tmp"
+        proc = AgentProcess(
+            jenkins_url="https://example.com",
+            agent_jar="/tmp/test.jar",
+            agent_name="test",
+            workdir=str(tmp_path),
+            secret=(TEST_VALUE),
+            temp_dir=str(temp_dir),
+        )
+        cmd = proc._build_cmd("java", "@secret-file")
+
+        assert f"-Djava.io.tmpdir={temp_dir}" in cmd
+        assert cmd.index(f"-Djava.io.tmpdir={temp_dir}") < cmd.index("-jar")
+
+    def test_secret_file_uses_configured_temp_dir(self, tmp_path):
+        temp_dir = tmp_path / "runtime" / "tmp"
+        proc = AgentProcess(
+            jenkins_url="https://example.com",
+            agent_jar="/tmp/test.jar",
+            agent_name="test",
+            workdir=str(tmp_path),
+            secret=(TEST_VALUE),
+            temp_dir=str(temp_dir),
+        )
+
+        secret_arg = proc._create_secret_file()
+
+        assert secret_arg.startswith("@")
+        assert Path(proc._secret_file).parent == temp_dir
+        proc.cleanup()
+
     def test_stop_terminates_then_kills_when_needed(self, tmp_path):
         events = []
 

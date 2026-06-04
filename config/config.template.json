@@ -6,6 +6,7 @@
     "verifySsl": true,
     "tunnel": "",
     "javaHome": "",
+    "tempDir": "",
     "workDir": "%USERPROFILE%\\jenkins-agent",
     "agentJarName": "agent.jar",
     "logFileName": "jenkins-agent.log"
@@ -21,6 +22,12 @@
     "maxRetries": 3,
     "retryDelaySeconds": 5,
     "chunkSize": 8192
+  },
+  "jnlp": {
+    "enabled": false,
+    "url": "",
+    "refreshSecret": false,
+    "saveSecret": false
   },
   "fallback": {
     "agentJarUrl": "https://downloads.example.com/jenkins/agent.jar",
