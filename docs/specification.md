@@ -38,7 +38,12 @@
 - `--protocols`
 - `--java-opts`
 - `--java-home`
+- `--temp-dir`
 - `--fallback-url`
+- `--jnlp`
+- `--jnlp-url`
+- `--jnlp-refresh-secret`
+- `--jnlp-save-secret`
 - `--work-dir`
 - `--jar-path`
 - `--log-path`
@@ -54,13 +59,14 @@
 
 - `agent.jenkinsUrl`
 - `agent.agentName`
-- `agent.secret`
+- `agent.secret`, кроме режима `jnlp.enabled=true`, где secret может быть получен из JNLP перед запуском агента
 
 Поддерживаемые секции:
 
 - `agent`
 - `logging`
 - `download`
+- `jnlp`
 - `fallback`
 - `behavior`
 - `update`
@@ -70,9 +76,11 @@
 Текущая реализация:
 
 - `download.timeout` и `download.chunkSize` применяются в `src/downloader.py`;
+- `jnlp.enabled` разрешает получить `agent.secret` из JNLP, `jnlp.refreshSecret` принудительно обновляет его перед запуском, `jnlp.saveSecret` записывает полученное значение в runtime `config.json`;
 - `agent.logFileName` и `--log-path` задают базовый путь лог-файла, поверх которого работает ротация;
 - `agent.java_opts` добавляется в команду запуска Java перед `-jar`.
 - `agent.javaHome` и `--java-home` позволяют явно указать корень JDK/JRE или путь к `java(.exe)`.
+- `agent.tempDir` и `--temp-dir` задают временный каталог launcher/Java; путь может быть относительным или абсолютным, Java получает `-Djava.io.tmpdir=<path>`.
 
 ## Фильтрация ENV
 

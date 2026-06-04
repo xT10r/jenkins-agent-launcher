@@ -7,6 +7,8 @@
 | Документ | Назначение |
 |----------|------------|
 | [specification.md](./specification.md) | Краткая спецификация текущего поведения: режимы запуска, конфигурация, GUI, ограничения |
+| [operations.md](./operations.md) | Эксплуатация, fallback, логирование, build metadata, release/signing notes |
+| [release-process.md](./release-process.md) | Правила ведения `CHANGELOG.md`, release headings и подготовки релиза |
 
 ## Исторические материалы
 
